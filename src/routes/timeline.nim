@@ -46,38 +46,21 @@ proc fetchProfile*(after: string; query: Query; cfg: Config; skipRail=false;
     after.setLen 0
 
   let
-    timeline =
-      case query.kind
-      of posts: getGraphUserTweets(userId, TimelineKind.tweets, after)
-      of replies: getGraphUserTweets(userId, TimelineKind.replies, after)
-      of media: getGraphUserTweets(userId, TimelineKind.media, after)
-      of favorites: getFavorites(userId, cfg, after)
-      else: getGraphSearch(query, after)
-
     rail =
       skipIf(skipRail or query.kind == media, @[]):
         getCachedPhotoRail(name)
 
-    user = await getCachedUser(name)
+    user = getCachedUser(name)
 
-  var pinned: Option[Tweet]
-  if not skipPinned and user.pinnedTweet > 0 and
-     after.len == 0 and query.kind in {posts, replies}:
-    let tweet = await getCachedTweet(user.pinnedTweet)
-    if not tweet.isNil:
-      tweet.pinned = true
-      tweet.user = user
-      pinned = some tweet
+  result =
+    case query.kind
+    of posts: await getUserTimeline(userId, after)
+    of replies: await getGraphUserTweets(userId, TimelineKind.replies, after)
+    of media: await getGraphUserTweets(userId, TimelineKind.media, after)
+    else: Profile(tweets: await getTweetSearch(query, after))
 
-  result = Profile(
-    user: user,
-    pinned: pinned,
-    tweets: await timeline,
-    photoRail: await rail
-  )
-
-  if result.user.protected or result.user.suspended:
-    return
+  result.user = await user
+  result.photoRail = await rail
 
   result.tweets.query = query
 
@@ -85,7 +68,7 @@ proc showTimeline*(request: Request; query: Query; cfg: Config; prefs: Prefs;
                    rss, after: string): Future[string] {.async.} =
   if query.fromUser.len != 1:
     let
-      timeline = await getGraphSearch(query, after)
+      timeline = await getTweetSearch(query, after)
       html = renderTweetSearch(timeline, cfg, prefs, getPath())
     return renderMain(html, request, cfg, prefs, "Multi", rss=rss)
 
@@ -140,7 +123,7 @@ proc createTimelineRouter*(cfg: Config) =
       # used for the infinite scroll feature
       if @"scroll".len > 0:
         if query.fromUser.len != 1:
-          var timeline = await getGraphSearch(query, after)
+          var timeline = await getTweetSearch(query, after)
           if timeline.content.len == 0: resp Http404
           timeline.beginning = true
           resp $renderTweetSearch(timeline, cfg, prefs, getPath())

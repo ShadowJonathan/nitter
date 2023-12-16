@@ -91,7 +91,7 @@ proc renderSearchPanel*(query: Query): VNode =
           span(class="search-title"): text "Near"
           genInput("near", "", query.near, "Location...", autofocus=false)
 
-proc renderTweetSearch*(results: Result[Tweet]; cfg: Config; prefs: Prefs; path: string;
+proc renderTweetSearch*(results: Timeline; cfg: Config; prefs: Prefs; path: string;
                         pinned=none(Tweet)): VNode =
   let query = results.query
   buildHtml(tdiv(class="timeline-container")):
