@@ -41,11 +41,11 @@ proc getMediaQuery*(name: string): Query =
   )
 
 
-proc getFavoritesQuery*(name: string): Query =
+#[proc getFavoritesQuery*(name: string): Query =
   Query(
     kind: favorites,
     fromUser: @[name]
-  )
+  )]#
 
 proc getReplyQuery*(name: string): Query =
   Query(

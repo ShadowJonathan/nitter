@@ -110,7 +110,7 @@ proc createRssRouter*(cfg: Config) =
           case tab
           of "with_replies": getReplyQuery(name)
           of "media": getMediaQuery(name)
-          of "favorites": getFavoritesQuery(name)
+          # of "favorites": getFavoritesQuery(name)
           # of "search": initQuery(params(request), name=name)
           else: Query(fromUser: @[name])
 
