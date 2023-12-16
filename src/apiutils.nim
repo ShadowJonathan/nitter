@@ -122,6 +122,12 @@ proc fetch*(url: Uri; api: Api; additional_headers: HttpHeaders = newHttpHeaders
       raise rateLimitError()
 
 proc fetchRaw*(url: Uri; api: Api; additional_headers: HttpHeaders = newHttpHeaders()): Future[string] {.async.} =
+
+  if len(cfg.cookieHeader) != 0:
+      additional_headers.add("Cookie", cfg.cookieHeader)
+  if len(cfg.xCsrfToken) != 0:
+      additional_headers.add("x-csrf-token", cfg.xCsrfToken)
+
   fetchImpl(result, additional_headers):
     if not (result.startsWith('{') or result.startsWith('[')):
       echo resp.status, ": ", result, " --- url: ", url
